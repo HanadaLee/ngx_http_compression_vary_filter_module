@@ -1,7 +1,7 @@
 # ngx_http_compression_vary_filter_module
 
 # Name
-ngx_http_compression_vary_filter_module is a header filter module used instead of the 'gzip_vary' directive.
+ngx_http_compression_vary_filter_module is a header filter module used instead of the `gzip_vary` directive.
 
 # Table of Content
 
@@ -29,6 +29,7 @@ server {
 
     location / {
         gzip on;
+        gzip_vary off;           # Disable gzip_vary to avoid conflicts with compression_vary
         compression_vary on;
 
         proxy_pass http://foo.com;
@@ -54,7 +55,9 @@ Enables or disables inserting the `Vary: Accept-Encoding` response header field 
 
 Unlike `gzip_vary`, if a `Vary` header exists for the original response, it will append the `Accept-Encoding` to the original `Vary` header. In addition, multiple `Vary` headers will be merged into one and separated by commas. Duplicate header values ​​in `Vary` will be removed.
 
-This module is also effective when the directives from third-party compression modules such as `brotli`, `brotli_static`, `unbrotli`, `zstd`, `zstd_static`, and `unzstd` are activated.
+Note that `compression_vary` should not be used simultaneously with `gzip_vary`, as this will result in duplicate `Vary` headers.
+
+This module is also effective when the directives from third-party compression modules such as `brotli`, `brotli_static`, `unbrotli`, `zstd`, `zstd_static`, `unzstd` and `undeflate` are activated.
 
 # Author
 
