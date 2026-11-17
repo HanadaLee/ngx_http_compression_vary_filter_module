@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) Hanada
+ * Copyright (C) Hanada
  */
 
 
@@ -72,29 +72,28 @@ static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
 static ngx_int_t
 ngx_http_compression_vary_header_filter(ngx_http_request_t *r)
 {
-    u_char             *data, *last, *p, *start;
-    size_t              total_len;
-    ngx_list_part_t    *part;
-    ngx_table_elt_t    *h, *header;
-    ngx_uint_t          found, has_accept_encoding, i, j, n;
-    ngx_array_t         unique_values;
-    ngx_str_t           token, *v, *value;
+    u_char                                   *data, *last, *p, *start;
+    size_t                                    total_len;
+    ngx_str_t                                 token, *v, *value;
+    ngx_uint_t                                found, has_encoding, i, j, n;
+    ngx_array_t                               unique_values;
+    ngx_list_part_t                          *part;
+    ngx_table_elt_t                          *h, *header;
+    ngx_http_compression_vary_filter_conf_t  *vcf;
 
-    static ngx_str_t accept_encoding = ngx_string("Accept-Encoding");
+    static ngx_str_t  accept_encoding = ngx_string("Accept-Encoding");
 
-    ngx_http_compression_vary_filter_conf_t  *conf;
+    vcf = ngx_http_get_module_loc_conf(r,
+                                       ngx_http_compression_vary_filter_module);
 
-    conf = ngx_http_get_module_loc_conf(r,
-                                      ngx_http_compression_vary_filter_module);
-
-    has_accept_encoding = 0;
-
-    if (!conf->enabled) {
+    if (!vcf->enabled) {
         return ngx_http_next_header_filter(r);
     }
 
-    if (ngx_array_init(&unique_values, r->pool, 4,
-                       sizeof(ngx_str_t)) != NGX_OK)
+    has_encoding = 0;
+
+    if (ngx_array_init(&unique_values, r->pool, 4, sizeof(ngx_str_t))
+        != NGX_OK)
     {
         return NGX_ERROR;
     }
@@ -167,7 +166,7 @@ ngx_http_compression_vary_header_filter(ngx_http_request_t *r)
                             && ngx_strncasecmp(token.data, accept_encoding.data,
                                                token.len) == 0)
                         {
-                            has_accept_encoding = 1;
+                            has_encoding = 1;
                         }
                     }
                 }
@@ -179,7 +178,7 @@ ngx_http_compression_vary_header_filter(ngx_http_request_t *r)
         }
     }
 
-    if (r->gzip_vary && !has_accept_encoding) {
+    if (r->gzip_vary && !has_encoding) {
         v = ngx_array_push(&unique_values);
         if (v == NULL) {
             return NGX_ERROR;
@@ -196,7 +195,7 @@ ngx_http_compression_vary_header_filter(ngx_http_request_t *r)
     for (i = 0; i < n; i++) {
         total_len += value[i].len;
         if (i != n - 1) {
-            total_len += 2;  /* ', ' */
+            total_len += sizeof(", ") - 1;
         }
     }
 
@@ -225,6 +224,7 @@ ngx_http_compression_vary_header_filter(ngx_http_request_t *r)
     }
 
     h->hash = 1;
+    h->next = NULL;
     ngx_str_set(&h->key, "Vary");
     h->value.len = total_len;
     h->value.data = data;
@@ -254,8 +254,8 @@ static char *
 ngx_http_compression_vary_filter_merge_conf(ngx_conf_t *cf,
     void *parent, void *child)
 {
-    ngx_http_compression_vary_filter_conf_t *prev = parent;
-    ngx_http_compression_vary_filter_conf_t *conf = child;
+    ngx_http_compression_vary_filter_conf_t  *prev = parent;
+    ngx_http_compression_vary_filter_conf_t  *conf = child;
 
     ngx_conf_merge_value(conf->enabled, prev->enabled, 0);
 

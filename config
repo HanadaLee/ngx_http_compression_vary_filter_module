@@ -1,3 +1,5 @@
+have=NGX_HTTP_GZIP . auto/have
+
 ngx_addon_name=ngx_http_compression_vary_filter_module
 ngx_module_type=HTTP_FILTER
 ngx_module_name=ngx_http_compression_vary_filter_module
